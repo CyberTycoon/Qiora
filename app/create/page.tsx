@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnifiedTextGenerationForm } from "@/components/unified-text-generation-form";
 import { UnifiedImageGenerationForm } from "@/components/unified-image-generation-form";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Create a component to handle the search params
 function CreatePageContent() {
@@ -38,7 +39,9 @@ function CreatePageContent() {
 export default function CreatePage() {
   return (
     <Suspense fallback={<div className="container py-8">Loading...</div>}>
-      <CreatePageContent />
+        <ProtectedRoute>
+            <CreatePageContent />
+        </ProtectedRoute>
     </Suspense>
   );
 }
