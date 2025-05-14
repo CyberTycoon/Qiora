@@ -45,7 +45,7 @@ async function testHuggingFaceAPI() {
     },
   };
 
-  const modelApiUrl = "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-llm-7b-chat";
+  const modelApiUrl = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
 
   console.log(`Sending request to Hugging Face API at: ${modelApiUrl}`);
 
