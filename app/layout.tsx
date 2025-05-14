@@ -1,77 +1,97 @@
-import DeployButton from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import HeaderAuth from "@/components/header-auth";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/utils/supabase/check-env-vars";
-import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
-import Link from "next/link";
-import "./globals.css";
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Sparkles } from "lucide-react"
+import Link from "next/link"
+import { ModeToggle } from "@/components/mode-toggle"
+import { AuthProvider } from "@/components/AuthProvider"
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
 
-export const metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
-};
+const inter = Inter({ subsets: ["latin"] })
 
-const geistSans = Geist({
-  display: "swap",
-  subsets: ["latin"],
-});
+export const metadata: Metadata = {
+  title: "Cortex - AI Content Creation Platform",
+  description: "Generate amazing text and images with AI",
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
-  return (
-    <html lang="en" className={geistSans.className} suppressHydrationWarning>
-      <body className="bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <main className="min-h-screen flex flex-col items-center">
-            <div className="flex-1 w-full flex flex-col gap-20 items-center">
-              <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-                <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
-                  <div className="flex gap-5 items-center font-semibold">
-                    <Link href={"/"}>Next.js Supabase Starter</Link>
-                    <div className="flex items-center gap-2">
-                      <DeployButton />
-                    </div>
-                  </div>
-                  {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
-                </div>
-              </nav>
-              <div className="flex flex-col gap-20 max-w-5xl p-5">
-                {children}
-              </div>
 
-              <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
-                <p>
-                  Powered by{" "}
-                  <a
-                    href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-                    target="_blank"
-                    className="font-bold hover:underline"
-                    rel="noreferrer"
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            <div className="flex flex-col min-h-screen">
+            {/* Header */}
+            <header className="border-b bg-background z-10">
+              <div className="container flex items-center justify-between py-4">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary p-2 rounded-lg">
+                    <Sparkles className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <Link href="/" className="text-xl font-bold text-primary">
+                    Cortex
+                  </Link>
+                </div>
+                <nav className="hidden md:flex items-center gap-6">
+                  <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+                    Home
+                  </Link>
+                  <Link href="/create" className="text-sm font-medium hover:text-primary transition-colors">
+                    Create
+                  </Link>
+                  <Link href="/gallery" className="text-sm font-medium hover:text-primary transition-colors">
+                    Gallery
+                  </Link>
+                  <Link href="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
+                    Pricing
+                  </Link>
+                </nav>
+                <div className="flex items-center gap-4">
+                  <ModeToggle />
+                  <Link
+                    href="/auth/sign-in"
+                    className="text-sm font-medium px-3 py-1.5 rounded-md hover:text-primary hover:bg-accent transition-colors"
                   >
-                    Supabase
-                  </a>
-                </p>
-                <ThemeSwitcher />
-              </footer>
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/auth/sign-up"
+                    className="text-sm font-medium px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              </div>
+            </header>
+          {/* Main Content */}
+          <main className="flex-1 bg-background">{children}</main>
+
+          {/* Footer */}
+            {/* Footer */}
+            <footer className="border-t mt-auto bg-background">
+              <div className="container py-8">
+                <div className="flex flex-col md:flex-row justify-between items-center">
+                  <div className="flex items-center gap-2 mb-4 md:mb-0">
+                    <div className="bg-primary p-1.5 rounded-lg">
+                      <Sparkles className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <span className="font-bold text-primary">Cortex</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">© 2025 Cortex. All rights reserved.</p>
+                </div>
+              </div>
+            </footer>
             </div>
-          </main>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
+            </ThemeProvider>
+          </AuthProvider>
+        </body>
+      </html>
+  )
 }
