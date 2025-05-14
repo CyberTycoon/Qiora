@@ -7,6 +7,7 @@ import { Sparkles } from "lucide-react"
 import Link from "next/link"
 import { ModeToggle } from "@/components/mode-toggle"
 import { AuthProvider } from "@/components/AuthProvider"
+import SessionValidator from "@/components/SessionValidator"
 
 
 const inter = Inter({ subsets: ["latin"] })
@@ -26,6 +27,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
+          <SessionValidator/>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <div className="flex flex-col min-h-screen">
             {/* Header */}

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 export function LoginForm({
   className,
@@ -18,7 +19,7 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -26,13 +27,13 @@ export function LoginForm({
     e.preventDefault();
     setError(null);
     setLoading(true);
-    
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) {
         setError(error.message);
       } else {
@@ -47,10 +48,12 @@ export function LoginForm({
     }
   };
 
-  const handleSocialLogin = async (provider: "google" | "apple" | "facebook") => {
+  const handleSocialLogin = async (
+    provider: "google" | "apple" | "facebook"
+  ) => {
     setError(null);
     setLoading(true);
-    
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -58,7 +61,7 @@ export function LoginForm({
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-      
+
       if (error) {
         setError(error.message);
       }
@@ -82,13 +85,13 @@ export function LoginForm({
                   Login to your Cortex account
                 </p>
               </div>
-              
+
               {error && (
                 <div className="p-3 text-sm bg-red-100 border border-red-200 text-red-600 rounded-md">
                   {error}
                 </div>
               )}
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -110,19 +113,15 @@ export function LoginForm({
                     Forgot your password?
                   </Link>
                 </div>
-                <Input 
-                  id="password" 
-                  type="password" 
+                <Input
+                  id="password"
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required 
+                  required
                 />
               </div>
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={loading}
-              >
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Logging in..." : "Login"}
               </Button>
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
@@ -131,9 +130,9 @@ export function LoginForm({
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                   onClick={() => handleSocialLogin("apple")}
                   disabled={loading}
@@ -146,9 +145,9 @@ export function LoginForm({
                   </svg>
                   <span className="sr-only">Login with Apple</span>
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                   onClick={() => handleSocialLogin("google")}
                   disabled={loading}
@@ -161,9 +160,9 @@ export function LoginForm({
                   </svg>
                   <span className="sr-only">Login with Google</span>
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                   onClick={() => handleSocialLogin("facebook")}
                   disabled={loading}
@@ -186,17 +185,20 @@ export function LoginForm({
             </div>
           </form>
           <div className="relative hidden bg-muted md:block">
-            <img
+            <Image
+              fill
+              priority
               src="/form-image.jpg"
               alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
         </CardContent>
       </Card>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        By clicking continue, you agree to our <Link href="/terms">Terms of Service</Link>{" "}
-        and <Link href="/privacy">Privacy Policy</Link>.
+        By clicking continue, you agree to our{" "}
+        <Link href="/terms">Terms of Service</Link> and{" "}
+        <Link href="/privacy">Privacy Policy</Link>.
       </div>
     </div>
   );
