@@ -1,35 +1,26 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UnifiedTextGenerationForm } from "@/components/unified-text-generation-form"
-import { UnifiedImageGenerationForm } from "@/components/unified-image-generation-form"
+"use client";
 
-export default function CreatePage() {
+import { Suspense } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UnifiedTextGenerationForm } from "@/components/unified-text-generation-form";
+import { UnifiedImageGenerationForm } from "@/components/unified-image-generation-form";
+
+// Create a component to handle the search params
+function CreatePageContent() {
   return (
-    <div className="container py-10">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            Create Content
-          </h1>
-          <p className="text-gray-600 max-w-3xl">
+    <div className="container py-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="space-y-4">
+          <h1 className="text-3xl font-bold">Create Content</h1>
+          <p className="text-muted-foreground">
             Use our AI tools to generate text or images. Enter a prompt describing what you want to create, and our AI
             will do the rest. Save your favorite creations to your gallery.
           </p>
         </div>
-
-        <Tabs defaultValue="text" className="max-w-4xl">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-gradient-to-r from-purple-50 to-indigo-50 p-1">
-            <TabsTrigger
-              value="text"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all duration-300"
-            >
-              Text Generation
-            </TabsTrigger>
-            <TabsTrigger
-              value="image"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300"
-            >
-              Image Generation
-            </TabsTrigger>
+        <Tabs defaultValue="text" className="mt-8">
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="text">Text Generation</TabsTrigger>
+            <TabsTrigger value="image">Image Generation</TabsTrigger>
           </TabsList>
           <TabsContent value="text">
             <UnifiedTextGenerationForm />
@@ -40,5 +31,14 @@ export default function CreatePage() {
         </Tabs>
       </div>
     </div>
-  )
+  );
+}
+
+// Main component with Suspense boundary
+export default function CreatePage() {
+  return (
+    <Suspense fallback={<div className="container py-8">Loading...</div>}>
+      <CreatePageContent />
+    </Suspense>
+  );
 }
