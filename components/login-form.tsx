@@ -37,7 +37,7 @@ export function LoginForm({
         setError(error.message);
       } else {
         router.refresh();
-        router.push("/dashboard"); // Redirect to dashboard after successful login
+        router.push("/create"); // Redirect to dashboard after successful login
       }
     } catch (err) {
       setError("An unexpected error occurred");
