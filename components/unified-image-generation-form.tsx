@@ -110,25 +110,76 @@ export function UnifiedImageGenerationForm() {
     setIsGenerating(true)
     setGeneratedImage("")
 
-    try {
-      // In a real app, you would use the AI SDK with your API key
-      // This is a mock implementation for demonstration purposes
-      const mockGeneration = async () => {
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 3000))
+    // Use AbortController to enable request cancellation
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 180000) // 3 minute timeout
 
-        // Return a placeholder image URL
-        return "/placeholder.svg?height=512&width=512"
+    try {
+      // Make a request to our API route
+      const response = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          style: style,
+          complexity: complexity[0],
+        }),
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      // Handle specific status codes
+      if (response.status === 503) {
+        const data = await response.json()
+        toast({
+          title: "Model is loading",
+          description: "The AI model is still warming up. Please try again in a few seconds.",
+          variant: "default",
+        })
+        
+        // Optional: Auto-retry after a few seconds
+        setTimeout(() => {
+          if (!isGenerating) {
+            handleGenerate()
+          }
+        }, 10000) // Retry after 10 seconds
+        
+        return
       }
 
-      // In a real implementation, you would use an image generation API
-      const imageUrl = await mockGeneration()
-      setGeneratedImage(imageUrl)
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.error || "Failed to generate image"
+        console.error("API Error:", errorMessage)
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      
+      if (!data.imageUrl) {
+        throw new Error("No image data received")
+      }
+      
+      setGeneratedImage(data.imageUrl)
     } catch (error) {
+      clearTimeout(timeoutId)
+      
+      if (typeof error === 'object' && error instanceof Error && error.name === 'AbortError') {
+        toast({
+          title: "Request timed out",
+          description: "Image generation took too long. Please try a simpler prompt or try again later.",
+          variant: "destructive",
+        })
+        return
+      }
+      
       console.error("Error generating image:", error)
       toast({
         title: "Generation failed",
-        description: "There was an error generating your image. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error generating your image. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -187,7 +238,7 @@ export function UnifiedImageGenerationForm() {
                   className={`cursor-pointer transition-all ${
                     selectedTemplate === key
                       ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                      : "hover:bg-indigo-50"
+                      : "hover:bg-indigo-50 dark:text-violet-500 dark:hover:bg-violet-500/10"
                   }`}
                   onClick={() => setSelectedTemplate(key)}
                 >
@@ -289,7 +340,7 @@ export function UnifiedImageGenerationForm() {
           <CardContent className="pt-6">
             <div className="flex justify-center mb-4 bg-gradient-to-r from-gray-50 to-indigo-50 p-6 rounded-md border border-indigo-100">
               <img
-                src={generatedImage || "/placeholder.svg"}
+                src={generatedImage}
                 alt={prompt}
                 className="rounded-md max-h-96 object-contain shadow-md transition-all hover:shadow-lg"
               />

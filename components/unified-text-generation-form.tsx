@@ -1,3 +1,4 @@
+// Updated UnifiedTextGenerationForm component
 "use client"
 
 import { useState, useEffect } from "react"
@@ -99,50 +100,70 @@ export function UnifiedTextGenerationForm() {
     }
   }, [selectedTemplate, selectedPreset])
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      toast({
-        title: "Empty prompt",
-        description: "Please enter a prompt to generate text.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsGenerating(true)
-    setGeneratedText("")
-
-    try {
-      // In a real app, you would use the AI SDK with your API key
-      // This is a mock implementation for demonstration purposes
-      const mockGeneration = async () => {
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-
-        // Return mock generated text based on the prompt
-        return `Generated text based on: "${prompt}"\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.\n\nNullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl. Nullam auctor, nisl eget ultricies tincidunt, nisl nisl aliquam nisl, eget ultricies nisl nisl eget nisl.`
-      }
-
-      // In a real implementation, you would use:
-      // const { text } = await generateText({
-      //   model: openai('gpt-4o'),
-      //   prompt: prompt,
-      // });
-
-      const text = await mockGeneration()
-      setGeneratedText(text)
-    } catch (error) {
-      console.error("Error generating text:", error)
-      toast({
-        title: "Generation failed",
-        description: "There was an error generating your text. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGenerating(false)
-    }
+ // Updated error handling for the fetch request in UnifiedTextGenerationForm
+const handleGenerate = async () => {
+  if (!prompt.trim()) {
+    toast({
+      title: "Empty prompt",
+      description: "Please enter a prompt to generate text.",
+      variant: "destructive",
+    })
+    return
   }
 
+  setIsGenerating(true)
+  setGeneratedText("")
+
+  try {
+    console.log("Making request to /api/generate-text")
+    
+    // Call our API route that connects to Hugging Face
+    const response = await fetch("/api/generate-text", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        template: selectedTemplate,
+      }),
+    })
+    
+    console.log("Response status:", response.status)
+    
+    // For debugging - log the raw response
+    const responseText = await response.text()
+    console.log("Raw response:", responseText)
+    
+    // Try to parse the response as JSON (if possible)
+    let data
+    try {
+      data = JSON.parse(responseText)
+    } catch (parseError) {
+      console.error("Error parsing response:", parseError)
+      throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}...`)
+    }
+    
+    if (!response.ok) {
+      throw new Error(data.error || `Error: ${response.status} ${response.statusText}`)
+    }
+
+    if (!data.text) {
+      throw new Error("Received empty response from the AI service")
+    }
+
+    setGeneratedText(data.text)
+  } catch (error) {
+    console.error("Error generating text:", error)
+    toast({
+      title: "Generation failed",
+      description: error instanceof Error ? error.message : "There was an error generating your text. Please try again.",
+      variant: "destructive",
+    })
+  } finally {
+    setIsGenerating(false)
+  }
+}
   const saveToGallery = () => {
     if (!generatedText) return
 
@@ -192,7 +213,7 @@ export function UnifiedTextGenerationForm() {
                   className={`cursor-pointer transition-all ${
                     selectedTemplate === key
                       ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                      : "hover:bg-purple-50"
+                      : "hover:bg-purple-50 dark:text-violet-500 dark:hover:bg-violet-500/10"
                   }`}
                   onClick={() => setSelectedTemplate(key)}
                 >
