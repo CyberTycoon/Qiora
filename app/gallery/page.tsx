@@ -175,8 +175,10 @@ function GalleryItem({
           size="sm"
           className="border-purple-200 hover:border-purple-300 hover:bg-purple-50 transition-colors"
         >
-          <Download className="h-4 w-4 mr-2" />
-          Download
+                  <a href={item.content} download={true} className="flex items-center justify-between">
+                      <Download className="h-4 w-4 mr-2" />
+                      <p>Download</p>
+                  </a>
         </Button>
         <Button
           variant="ghost"

@@ -1,92 +1,69 @@
-// test-huggingface.js
-// Save as a separate script and run with Node.js to test HF API directly
-// Run with: node test-huggingface.js
+// test.js
+// Save this code as test.js in your project directory.
+// Run with: node test.js
 
 // Load environment variables from .env file
+// Make sure you have the 'dotenv' package installed (`npm install dotenv`)
 require('dotenv').config();
 
-// You'll need to install node-fetch if running in Node.js environment
-// npm install node-fetch
+// Import the Google Generative AI library
+// Make sure you have the library installed (`npm install @google/generative-ai`)
+const { GoogleGenerativeAI } = require('@google/generative-ai'); // Note: The class name is GoogleGenerativeAI
 
-// Use a dynamic import() to load node-fetch (which is an ES Module)
-// This returns a Promise, so we need to await it inside an async function.
-// The fetch function itself is available as the .default export of the module.
+// Get your Google API key from environment variables
+// Make sure you set GOOGLE_API_KEY in your .env file in the same directory
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
-
-// Get your actual token from environment variables (now loaded by dotenv)
-const HF_API_KEY = process.env.HF_TOKEN;
-
-if (!HF_API_KEY) {
-  console.error("ERROR: HF_TOKEN environment variable is not set.");
-  console.error("Please create a .env file in the same directory with HF_TOKEN=your_token");
+// Check if the API key is set
+if (!GOOGLE_API_KEY) {
+  console.error("ERROR: GOOGLE_API_KEY environment variable is not set.");
+  console.error("Please create a .env file in the same directory with GOOGLE_API_KEY=your_gemini_key");
+  // Exit the script if the key is missing
   process.exit(1);
 }
 
-async function testHuggingFaceAPI() {
-  console.log("Testing Hugging Face API connection...");
+// Initialize the Google Generative AI client
+const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
 
-  // Dynamically import node-fetch
-  let fetch;
+// Async function to test the Google Gemini API connection
+async function testGeminiAPI() {
+  console.log("Testing Google Gemini API connection...");
+
+  // Select the model you want to use
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }); // Using a recent Flash model name
+
+  // Define the prompt
+  const prompt = "Create clear, informative educational content that breaks down complex topics into understandable sections. Generate a comprehensive study guide for machine learning with key concepts, definitions, examples, and practice questions.";
+
+  console.log(`Sending prompt to Gemini API: "${prompt}"`);
+
   try {
-      const nodeFetchModule = await import('node-fetch');
-      fetch = nodeFetchModule.default; // Get the default export which is the fetch function
+    // Generate content using the model
+    const result = await model.generateContent(prompt);
+
+    // Get the response text
+    // The structure might vary slightly based on API version and response type
+    const response = await result.response; // Access the Response object
+    const text = response.text(); // Get the text content
+
+    console.log("Success! API Response:");
+    console.log(text);
+
   } catch (error) {
-      console.error("Failed to import 'node-fetch'. Make sure it is installed (npm install node-fetch).", error);
-      process.exit(1); // Exit if fetch cannot be imported
-  }
+    // Catch any errors during the API call
+    console.error("Error during the API call:", error);
 
-  const payload = {
-    inputs: "<s>[INST]You are a helpful assistant. tell me about OOP in python'[/INST]</s>",
-    parameters: {
-      max_new_tokens: 1000,
-      temperature: 0.7,
-      do_sample: true,
-      return_full_text: false,
-    },
-  };
-
-  const modelApiUrl = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta";
-
-  console.log(`Sending request to Hugging Face API at: ${modelApiUrl}`);
-
-  try {
-    const response = await fetch(
-      modelApiUrl,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${HF_API_KEY}`,
-        },
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    );
-
-    console.log("Response status:", response.status);
-    console.log("Response status text:", response.statusText);
-
-    if (!response.ok) {
-      // Try to read the response body as text first, then attempt JSON parsing
-      const errorBody = await response.text();
-      console.error("Error response from API:", errorBody);
-
-      try {
-        const errorJson = JSON.parse(errorBody);
-        console.error("Parsed error details:", errorJson);
-      } catch (e) {
-        // If parsing fails, the error body was likely just text or empty
-        console.warn("Error response body was not valid JSON.");
-      }
-      return; // Stop execution if there's an API error
+    // Attempt to log more details if available (e.g., from API error response)
+    if (error.response && error.response.text) {
+        try {
+            const errorDetails = await error.response.text();
+            console.error("API Error Details:", errorDetails);
+        } catch (e) {
+            // Ignore if response body cannot be read
+        }
     }
-
-    const data = await response.json();
-    console.log("Success! API Response:", JSON.stringify(data, null, 2));
-
-  } catch (error) {
-    console.error("Error during the fetch operation:", error);
   }
 }
 
-// Call the async function to execute the API test
-testHuggingFaceAPI();
+// Call the async function to execute the API test when the script runs
+testGeminiAPI();
