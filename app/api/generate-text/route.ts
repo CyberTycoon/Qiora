@@ -61,6 +61,16 @@ function preparePromptForGemini(prompt: string, template: string): Array<{ role:
   return contents;
 }
 
+/**
+ * Removes all asterisk characters from the generated text.
+ * @param text The raw generated text from the API.
+ * @returns The text with all asterisks removed.
+ */
+function cleanText(text: string): string {
+    // This regex removes all occurrences of the asterisk character globally.
+    return text.replace(/\*/g, '');
+}
+
 
 // Next.js API Route Handler for POST requests
 // This handler is expected to be located at /api/generate-text
@@ -112,8 +122,12 @@ export async function POST(request: Request) {
 
     // Define generation configuration
     const generationConfig = {
-      maxOutputTokens: 500, // Maximum number of tokens to generate
-      temperature: 0.7, // Controls randomness (0.0 to 1.0)
+      // --- Increased maxOutputTokens to reduce incomplete text ---
+      maxOutputTokens: 2000, // Increased from 500 to allow for longer responses
+      // Adjust this value based on the typical length of content you expect
+      // Be mindful of API costs if you increase this significantly on a paid tier.
+      // --------------------------------------------------------------
+      temperature: 0.5, // Controls randomness (0.0 to 1.0)
       topP: 0.95, // Controls diversity via nucleus sampling
       // topK: 40, // Optional: Controls diversity via top-k sampling
     };
@@ -166,10 +180,13 @@ export async function POST(request: Request) {
        );
     }
 
-    // No need to clean up instruction markers like [/INST] as we are using Gemini's format
+    // --- Updated: Clean the generated text (only remove asterisks) ---
+    const processedText = cleanText(generatedText);
+    console.log("Processed text length:", processedText.length);
+    // -----------------------------------------------------------------
 
-    // Return the generated text to the client
-    return NextResponse.json({ text: generatedText } as GenerationResponse);
+    // Return the processed text to the client
+    return NextResponse.json({ text: processedText } as GenerationResponse);
 
   } catch (error: any) { // Catch any unhandled errors during the process
     console.error("Unhandled error in generate route:", error);
