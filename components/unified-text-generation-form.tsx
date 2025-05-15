@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { createClient } from "@/utils/supabase/client"
 
 type Template = {
   name: string
@@ -164,31 +165,50 @@ const handleGenerate = async () => {
     setIsGenerating(false)
   }
 }
-  const saveToGallery = () => {
-    if (!generatedText) return
-
-    // Get existing content from localStorage
-    const existingContent = localStorage.getItem("ai-content")
-    const contentArray = existingContent ? JSON.parse(existingContent) : []
-
-    // Add new content
-    const newContent = {
-      id: Date.now().toString(),
-      type: "text",
-      content: generatedText,
-      prompt: prompt,
-      template: selectedTemplate,
-      createdAt: new Date().toISOString(),
-    }
-
-    contentArray.push(newContent)
-    localStorage.setItem("ai-content", JSON.stringify(contentArray))
-
+const saveToGallery = async () => {
+  if (!generatedText) {
     toast({
-      title: "Saved to gallery",
-      description: "Your generated text has been saved to your gallery.",
+      title: "Nothing to save",
+      description: "Please generate text first before saving to gallery.",
+      variant: "destructive",
+    })
+    return
+  }
+
+  try {
+    const { data, error } = await createClient()
+      .from("generations")
+      .insert([{
+        output: generatedText,
+        prompt: prompt,
+        type: selectedTemplate,
+        created_at: new Date().toISOString(),
+      }])
+    
+    if (error) {
+      console.error('Error saving data:', error);
+      toast({
+        title: "Failed to save",
+        description: `Could not save to gallery: ${error.message}`,
+        variant: "destructive",
+      })
+    } else {
+      console.log('Data saved successfully:', data);
+      toast({
+        title: "Success",
+        description: "Your generated text has been saved to your gallery.",
+        variant: "default",
+      })
+    }
+  } catch (err) {
+    console.error('Unexpected error:', err);
+    toast({
+      title: "Connection error",
+      description: "Could not connect to the database. Please try again.",
+      variant: "destructive",
     })
   }
+}
 
   return (
     <div className="space-y-8">

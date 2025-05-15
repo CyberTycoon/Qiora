@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     // Define generation configuration
     const generationConfig = {
       // --- Increased maxOutputTokens to reduce incomplete text ---
-      maxOutputTokens: 2000, // Increased from 500 to allow for longer responses
+      maxOutputTokens: 1000, // Increased from 500 to allow for longer responses
       // Adjust this value based on the typical length of content you expect
       // Be mindful of API costs if you increase this significantly on a paid tier.
       // --------------------------------------------------------------
