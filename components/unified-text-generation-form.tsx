@@ -303,7 +303,7 @@ const saveToGallery = async () => {
         <Card className="border-purple-100 shadow-lg overflow-hidden">
           <div className="bg-gradient-to-r from-purple-600 to-indigo-600 h-2" />
           <CardContent className="pt-6">
-            <div className="bg-gradient-to-r from-gray-50 to-purple-50 p-6 rounded-md whitespace-pre-wrap mb-4 border border-purple-100">
+            <div className=" p-6 rounded-md whitespace-pre-wrap mb-4 border border-purple-100">
               {generatedText}
             </div>
             <div className="flex justify-end">

@@ -274,7 +274,7 @@ function GalleryItem({
       </CardHeader>
       <CardContent>
         {item.type === "text" ? (
-          <div className="h-48 overflow-y-auto bg-gradient-to-r from-gray-50 to-purple-50 p-3 rounded-md text-sm border border-purple-100">
+          <div className="h-48 overflow-y-auto p-3 rounded-md text-sm border border-purple-100">
             {item.output}
           </div>
         ) : (
