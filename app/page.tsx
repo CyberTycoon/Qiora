@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowRight, ImageIcon, Type } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import Image from "next/image"
 
 export default function Home() {
   return (
@@ -10,10 +11,10 @@ export default function Home() {
       <section className="container py-24 space-y-8 md:py-32">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="inline-block rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-primary shadow-sm">
-            Introducing CreativeAI
+            Introducing CortexAI
           </div>
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-            AI Content Creation <span className="text-primary">Made Simple</span>
+            AI Content Creation <span className="text-primary animate-pulse">Made Simple</span>
           </h1>
           <p className="max-w-[700px] text-muted-foreground md:text-xl">
             Generate professional content in seconds with our powerful AI tools. Perfect for content creators,
@@ -47,9 +48,12 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-40 bg-muted rounded-md flex items-center justify-center overflow-hidden">
-                <img
-                  src="/placeholder.svg?height=160&width=320"
+              <div className="h-40 rounded-md flex items-center justify-center overflow-hidden">
+                <Image
+                  width={200}
+                  height={200}
+                  priority
+                  src="/content.jpg"
                   alt="Content creators illustration"
                   className="h-full w-full object-cover rounded-md transition-transform hover:scale-105 duration-300"
                 />
@@ -74,8 +78,11 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <div className="h-40 bg-muted rounded-md flex items-center justify-center overflow-hidden">
-                <img
-                  src="/placeholder.svg?height=160&width=320"
+                <Image
+                  width={200}
+                  height={200}
+                  priority
+                  src="/marketing.jpg"
                   alt="Marketing illustration"
                   className="h-full w-full object-cover rounded-md transition-transform hover:scale-105 duration-300"
                 />
@@ -100,8 +107,11 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <div className="h-40 bg-muted rounded-md flex items-center justify-center overflow-hidden">
-                <img
-                  src="/placeholder.svg?height=160&width=320"
+                <Image
+                  width={200} 
+                  height={200}
+                  priority
+                  src="/visual.jpg"
                   alt="Visual assets illustration"
                   className="h-full w-full object-cover rounded-md transition-transform hover:scale-105 duration-300"
                 />

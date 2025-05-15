@@ -232,7 +232,7 @@ const saveToGallery = async () => {
                 <Badge
                   key={key}
                   variant={selectedTemplate === key ? "default" : "outline"}
-                  className={`cursor-pointer transition-all ${
+                  className={`cursor-pointer p-2 transition-all ${
                     selectedTemplate === key
                       ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
                       : "hover:bg-purple-50 dark:text-violet-500 dark:hover:bg-violet-500/10"

@@ -261,7 +261,7 @@ export function UnifiedImageGenerationForm() {
                 <Badge
                   key={key}
                   variant={selectedTemplate === key ? "default" : "outline"}
-                  className={`cursor-pointer transition-all ${
+                  className={`cursor-pointer p-2 transition-all ${
                     selectedTemplate === key
                       ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                       : "hover:bg-indigo-50 dark:text-violet-500 dark:hover:bg-violet-500/10"

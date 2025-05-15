@@ -8,6 +8,7 @@ import Link from "next/link"
 import { ModeToggle } from "@/components/mode-toggle"
 import { AuthProvider } from "@/components/AuthProvider"
 import SessionValidator from "@/components/SessionValidator"
+import Header from "@/components/navbar"
 
 
 const inter = Inter({ subsets: ["latin"] })
@@ -31,51 +32,9 @@ export default async function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <div className="flex flex-col min-h-screen">
             {/* Header */}
-            <header className="border-b bg-background z-10">
-              <div className="container flex items-center justify-between py-4">
-                <div className="flex items-center gap-2">
-                  <div className="bg-primary p-2 rounded-lg">
-                    <Sparkles className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <Link href="/" className="text-xl font-bold text-primary">
-                    Cortex
-                  </Link>
-                </div>
-                <nav className="hidden md:flex items-center gap-6">
-                  <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-                    Home
-                  </Link>
-                  <Link href="/create" className="text-sm font-medium hover:text-primary transition-colors">
-                    Create
-                  </Link>
-                  <Link href="/gallery" className="text-sm font-medium hover:text-primary transition-colors">
-                    Gallery
-                  </Link>
-                  <Link href="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
-                    Pricing
-                  </Link>
-                </nav>
-                <div className="flex items-center gap-4">
-                  <ModeToggle />
-                  <Link
-                    href="/auth/sign-in"
-                    className="text-sm font-medium px-3 py-1.5 rounded-md hover:text-primary hover:bg-accent transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/auth/sign-up"
-                    className="text-sm font-medium px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
-                  >
-                    Sign Up
-                  </Link>
-                </div>
-              </div>
-            </header>
+             <Header/>
           {/* Main Content */}
-          <main className="flex-1 bg-background">{children}</main>
-
-          {/* Footer */}
+          <main className="flex-1 bg-background mt-20">{children}</main>
             {/* Footer */}
             <footer className="border-t mt-auto bg-background">
               <div className="container py-8">
