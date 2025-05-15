@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { createClient } from "@/utils/supabase/client"
+import { Toaster } from "./ui/toaster"
 
 type ImageTemplate = {
   name: string
@@ -187,33 +189,57 @@ export function UnifiedImageGenerationForm() {
     }
   }
 
-  const saveToGallery = () => {
-    if (!generatedImage) return
-
-    // Get existing content from localStorage
-    const existingContent = localStorage.getItem("ai-content")
-    const contentArray = existingContent ? JSON.parse(existingContent) : []
-
-    // Add new content
-    const newContent = {
-      id: Date.now().toString(),
-      type: "image",
-      content: generatedImage,
-      prompt: prompt,
-      template: selectedTemplate,
-      style: style,
-      complexity: complexity[0],
-      createdAt: new Date().toISOString(),
+  const saveToGallery = async () => {
+  if (!generatedImage) return
+  
+  // Create content object
+  const newContent = {
+    type: "image",
+    output: generatedImage,
+    prompt: prompt,
+    template: selectedTemplate,
+    style: style,
+    complexity: complexity[0],
+    created_at: new Date().toISOString(),
+  }
+  const supabase = createClient()
+  // Save to Supabase
+  try {
+    const { data, error } = await supabase
+      .from('generations')
+      .insert([{
+        type: newContent.type,
+        output: newContent.output,
+        prompt: newContent.prompt,
+        template: newContent.template,
+        style: newContent.style,
+        complexity: newContent.complexity,
+        created_at: newContent.created_at
+      }])
+    
+    if (error) {
+      console.error('Error saving to Supabase:', error)
+      toast({
+        title: "Warning",
+        description: "failed to save to cloud.",
+        variant: "destructive",
+      })
+      return
     }
-
-    contentArray.push(newContent)
-    localStorage.setItem("ai-content", JSON.stringify(contentArray))
-
+    
     toast({
       title: "Saved to gallery",
-      description: "Your generated image has been saved to your gallery.",
+      description: "Your generated image has been saved to your gallery and cloud.",
+    })
+  } catch (err) {
+    console.error('Exception when saving to Supabase:', err)
+    toast({
+      title: "Saved locally",
+      description: "cloud sync failed.",
+      variant: "default",
     })
   }
+}
 
   return (
     <div className="space-y-8">
@@ -358,6 +384,7 @@ export function UnifiedImageGenerationForm() {
           </CardContent>
         </Card>
       )}
+      <Toaster/>
     </div>
   )
 }

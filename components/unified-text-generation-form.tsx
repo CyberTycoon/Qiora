@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/utils/supabase/client"
+import { Toaster } from "./ui/toaster"
 
 type Template = {
   name: string
@@ -179,9 +180,10 @@ const saveToGallery = async () => {
     const { data, error } = await createClient()
       .from("generations")
       .insert([{
+        type: "text",
         output: generatedText,
         prompt: prompt,
-        type: selectedTemplate,
+        template: selectedTemplate,
         created_at: new Date().toISOString(),
       }])
     
@@ -317,6 +319,7 @@ const saveToGallery = async () => {
           </CardContent>
         </Card>
       )}
+      <Toaster/>
     </div>
   )
 }
