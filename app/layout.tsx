@@ -112,8 +112,9 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* The <head> and <body> tags are automatically managed by Next.js */}
-      {/* Metadata defined above will be injected into the <head> */}
+      <head>
+        <meta name="google-site-verification" content="7NZY7ue9nb7KjdiSNblV78TZRxZqlm0_zFGhVo409Ms" />
+      </head>
       <body className={inter.className}>
         {/* AuthProvider and ThemeProvider remain Client Components */}
         <AuthProvider>
