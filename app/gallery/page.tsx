@@ -207,7 +207,7 @@ export default function GalleryPage() {
   )
 }
 
-// Update the GalleryItem component
+// Updated GalleryItem component with proper download functionality
 function GalleryItem({
   item,
   onDelete,
@@ -215,6 +215,51 @@ function GalleryItem({
   item: SavedContent
   onDelete: (id: number) => void
 }) {
+  // Function to handle the download of text content
+  const handleDownload = () => {
+    if (item.type === "text") {
+      // Create a Blob for text content
+      const blob = new Blob([item.output], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element and trigger download
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${item.prompt.substring(0, 30).replace(/[^a-z0-9]/gi, '_')}-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (item.type === "image") {
+      // For images, fetch the image and download it
+      fetch(item.output)
+        .then(response => response.blob())
+        .then(blob => {
+          // Determine file extension from URL or default to jpg
+          const fileExtension = item.output.split('.').pop()?.match(/^(jpg|jpeg|png|gif|webp|svg)$/i) 
+                               ? item.output.split('.').pop() 
+                               : 'jpg';
+          
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${item.prompt.substring(0, 30).replace(/[^a-z0-9]/gi, '_')}-${Date.now()}.${fileExtension}`;
+          document.body.appendChild(a);
+          a.click();
+          
+          // Clean up
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+          console.error("Error downloading image:", error);
+          // Fallback to opening in new tab if fetch fails
+          window.open(item.output, "_blank");
+        });
+    }
+  };
   return (
     <Card className="overflow-hidden transition-all hover:shadow-lg border-purple-100 hover:border-purple-200 group">
       <div
@@ -246,12 +291,11 @@ function GalleryItem({
         <Button
           variant="outline"
           size="sm"
+          onClick={handleDownload}
           className="border-purple-200 hover:border-purple-300 hover:bg-purple-50 transition-colors"
         >
-          <a href={item.output} download={`${item.type}-${Date.now()}`} className="flex items-center justify-between">
-            <Download className="h-4 w-4 mr-2" />
-            <p>Download</p>
-          </a>
+          <Download className="h-4 w-4 mr-2" />
+          <p>Download</p>
         </Button>
         <Button
           variant="ghost"
