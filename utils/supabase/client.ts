@@ -1,17 +1,29 @@
-// utils/supabase/client.ts
+'use client';
+
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 let supabaseClient: ReturnType<typeof createClientComponentClient> | null = null;
 
 export const createClient = () => {
-  // Return the existing client if it's already created to prevent multiple instances
-  if (supabaseClient) return supabaseClient;
-  
-  // Create a new client with explicit persistence options
-  supabaseClient = createClientComponentClient({
-    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  });
-  
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Validate URL and key
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  try {
+    // Validate URL format
+    new URL(supabaseUrl);
+  } catch (e) {
+    throw new Error('Invalid Supabase URL format');
+  }
+
+  supabaseClient = createClientComponentClient();
   return supabaseClient;
 };
