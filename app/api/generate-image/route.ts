@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const HF_API_KEY = process.env.HF_TOKEN;
 
 // Increase the max duration for this API route (Next.js feature)
-export const maxDuration = 300; // 300 seconds (5 minutes)
+export const maxDuration = 60; // 60 seconds (1 minute)
 
 // Increase the request body size limit
 export const config = {
