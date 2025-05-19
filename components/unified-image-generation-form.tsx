@@ -87,6 +87,7 @@ export function UnifiedImageGenerationForm() {
   const [complexity, setComplexity] = useState([50])
   const [generatedImage, setGeneratedImage] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -190,6 +191,7 @@ export function UnifiedImageGenerationForm() {
   }
 
   const saveToGallery = async () => {
+    setIsSaving(true)
   if (!generatedImage) return
   
   // Create content object
@@ -238,6 +240,9 @@ export function UnifiedImageGenerationForm() {
       description: "cloud sync failed.",
       variant: "default",
     })
+  }
+  finally {
+    setIsSaving(false)
   }
 }
 
