@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
             inputs: enhancedPrompt,
             parameters: {
               // Optional parameters for the model - simpler to avoid potential issues
-              guidance_scale: 8,
-              num_inference_steps: 80,
+              guidance_scale: 10,
+              num_inference_steps: 90,
             }
           }),
           signal: controller.signal
