@@ -94,6 +94,7 @@ export function UnifiedTextGenerationForm() {
   const [prompt, setPrompt] = useState("")
   const [generatedText, setGeneratedText] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -167,12 +168,14 @@ const handleGenerate = async () => {
   }
 }
 const saveToGallery = async () => {
+  setIsSaving(true)
   if (!generatedText) {
     toast({
       title: "Nothing to save",
       description: "Please generate text first before saving to gallery.",
       variant: "destructive",
     })
+    setIsSaving(false)
     return
   }
 
@@ -313,7 +316,7 @@ const saveToGallery = async () => {
                 className="border-purple-200 hover:border-purple-300 hover:bg-purple-50 transition-colors"
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save to Gallery
+                {isSaving ? "Saving..." : "Save to Gallery"}
               </Button>
             </div>
           </CardContent>
