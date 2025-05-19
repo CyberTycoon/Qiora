@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/utils/supabase/client"
 import { Toaster } from "./ui/toaster"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 type ImageTemplate = {
   name: string
@@ -23,6 +24,22 @@ type ImageTemplate = {
   }
   styles: string[]
 }
+
+// Image dimension presets
+type ImageDimension = {
+  width: number
+  height: number
+  label: string
+  description: string
+}
+
+const imageDimensions: ImageDimension[] = [
+  { width: 1024, height: 1024, label: "Square (1:1)", description: "1024×1024 - Good for profile pictures, icons" },
+  { width: 1024, height: 768, label: "Landscape (4:3)", description: "1024×768 - Good for horizontal content" },
+  { width: 768, height: 1024, label: "Portrait (3:4)", description: "768×1024 - Good for Pinterest, posters" },
+  { width: 1024, height: 576, label: "Widescreen (16:9)", description: "1024×576 - Perfect for banners, headers" },
+  { width: 512, height: 896, label: "Mobile (9:16)", description: "512×896 - Ideal for Instagram stories, mobile content" }
+]
 
 const imageTemplates: { [key: string]: ImageTemplate } = {
   "social-media": {
@@ -88,6 +105,7 @@ export function UnifiedImageGenerationForm() {
   const [generatedImage, setGeneratedImage] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedDimension, setSelectedDimension] = useState<string>("1024x1024")
   const { toast } = useToast()
 
   useEffect(() => {
@@ -113,6 +131,9 @@ export function UnifiedImageGenerationForm() {
     setIsGenerating(true)
     setGeneratedImage("")
 
+    // Parse selected dimensions
+    const [width, height] = selectedDimension.split("x").map(Number)
+
     // Use AbortController to enable request cancellation
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 180000) // 3 minute timeout
@@ -128,6 +149,8 @@ export function UnifiedImageGenerationForm() {
           prompt: prompt,
           style: style,
           complexity: complexity[0],
+          width: width,
+          height: height
         }),
         signal: controller.signal
       })
@@ -192,59 +215,67 @@ export function UnifiedImageGenerationForm() {
 
   const saveToGallery = async () => {
     setIsSaving(true)
-  if (!generatedImage) return
-  
-  // Create content object
-  const newContent = {
-    type: "image",
-    output: generatedImage,
-    prompt: prompt,
-    template: selectedTemplate,
-    style: style,
-    complexity: complexity[0],
-    created_at: new Date().toISOString(),
-  }
-  const supabase = createClient()
-  // Save to Supabase
-  try {
-    const { data, error } = await supabase
-      .from('generations')
-      .insert([{
-        type: newContent.type,
-        output: newContent.output,
-        prompt: newContent.prompt,
-        template: newContent.template,
-        style: newContent.style,
-        complexity: newContent.complexity,
-        created_at: newContent.created_at
-      }])
+    if (!generatedImage) return
     
-    if (error) {
-      console.error('Error saving to Supabase:', error)
-      toast({
-        title: "Warning",
-        description: "failed to save to cloud.",
-        variant: "destructive",
-      })
-      return
+    // Parse selected dimensions for storage
+    const [width, height] = selectedDimension.split("x").map(Number)
+    
+    // Create content object
+    const newContent = {
+      type: "image",
+      output: generatedImage,
+      prompt: prompt,
+      template: selectedTemplate,
+      style: style,
+      complexity: complexity[0],
+      width: width,
+      height: height,
+      created_at: new Date().toISOString(),
     }
     
-    toast({
-      title: "Saved to gallery",
-      description: "Your generated image has been saved to your gallery and cloud.",
-    })
-  } catch (err) {
-    console.error('Exception when saving to Supabase:', err)
-    toast({
-      title: "Saved locally",
-      description: "cloud sync failed.",
-      variant: "default",
-    })
+    const supabase = createClient()
+    // Save to Supabase
+    try {
+      const { data, error } = await supabase
+        .from('generations')
+        .insert([{
+          type: newContent.type,
+          output: newContent.output,
+          prompt: newContent.prompt,
+          template: newContent.template,
+          style: newContent.style,
+          complexity: newContent.complexity,
+          width: newContent.width,
+          height: newContent.height,
+          created_at: newContent.created_at
+        }])
+      
+      if (error) {
+        console.error('Error saving to Supabase:', error)
+        toast({
+          title: "Warning",
+          description: "failed to save to cloud.",
+          variant: "destructive",
+        })
+        return
+      }
+      
+      toast({
+        title: "Saved to gallery",
+        description: "Your generated image has been saved to your gallery and cloud.",
+      })
+    } catch (err) {
+      console.error('Exception when saving to Supabase:', err)
+      toast({
+        title: "Saved locally",
+        description: "cloud sync failed.",
+        variant: "default",
+      })
+    }
+    finally {
+      setIsSaving(false)
+    }
   }
-  finally {
-    setIsSaving(false)
-  }
-}
 
   return (
     <div className="space-y-8">
@@ -341,6 +372,32 @@ export function UnifiedImageGenerationForm() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-gray-700">Image Dimensions</Label>
+                <RadioGroup 
+                  value={selectedDimension} 
+                  onValueChange={setSelectedDimension}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
+                >
+                  {imageDimensions.map((dimension) => (
+                    <div key={`${dimension.width}x${dimension.height}`} className="flex items-center space-x-2">
+                      <RadioGroupItem 
+                        value={`${dimension.width}x${dimension.height}`} 
+                        id={`${dimension.width}x${dimension.height}`}
+                        className="border-indigo-300 text-indigo-600"
+                      />
+                      <Label 
+                        htmlFor={`${dimension.width}x${dimension.height}`}
+                        className="cursor-pointer flex flex-col"
+                      >
+                        <span className="font-medium">{dimension.label}</span>
+                        <span className="text-xs text-gray-500">{dimension.description}</span>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
               <div className="flex justify-end">
                 <Button
                   onClick={handleGenerate}
@@ -376,14 +433,27 @@ export function UnifiedImageGenerationForm() {
                 className="rounded-md max-h-96 object-contain shadow-md transition-all hover:shadow-lg"
               />
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                {selectedDimension.replace("x", "×")} pixels
+              </div>
               <Button
                 variant="outline"
                 onClick={saveToGallery}
                 className="border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
+                disabled={isSaving}
               >
-                <Save className="mr-2 h-4 w-4" />
-                Save to Gallery
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save to Gallery
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

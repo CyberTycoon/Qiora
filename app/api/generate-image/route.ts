@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const HF_API_KEY = process.env.HF_TOKEN;
 
 // Increase the max duration for this API route (Next.js feature)
-export const maxDuration = 60; // 300 seconds (5 minutes)
+export const maxDuration = 300; // 300 seconds (5 minutes)
 
 // Increase the request body size limit
 export const config = {
@@ -18,8 +18,7 @@ export const config = {
 
 // Model configuration
 const MODEL_CONFIG = {
-  baseModel: "stabilityai/stable-diffusion-xl-base-1.0",
-  refinementModel: "stabilityai/stable-diffusion-xl-refiner-1.0", // Optional: for two-stage generation
+  model: "stabilityai/stable-diffusion-xl-base-1.0",
   defaultParameters: {
     guidance_scale: 7.5,         // Controls how closely the image follows the prompt
     num_inference_steps: 50,     // Balance between quality and speed
@@ -147,6 +146,29 @@ function calculateParameters(baseParams: any, style: string, complexity: number 
   return params;
 }
 
+/**
+ * Validates and normalizes image dimensions
+ */
+function validateDimensions(width: number, height: number) {
+  // Valid values for SDXL (must be multiples of 8)
+  const validDimensions = [512, 576, 640, 704, 768, 832, 896, 960, 1024];
+  
+  // Find the closest valid dimensions
+  const findClosest = (value: number) => {
+    return validDimensions.reduce((prev, curr) => 
+      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+    );
+  };
+  
+  const normalizedWidth = findClosest(width || 1024);
+  const normalizedHeight = findClosest(height || 1024);
+  
+  return {
+    width: normalizedWidth,
+    height: normalizedHeight
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!HF_API_KEY) {
@@ -165,9 +187,10 @@ export async function POST(request: NextRequest) {
       complexity = 50, 
       seed, 
       width = 1024, 
-      height = 1024,
-      useRefinement = false   // Flag to enable two-stage generation with refiner
+      height = 1024
     } = body;
+    
+    console.log(`Received image generation request with dimensions: ${width}x${height}`);
 
     if (!prompt || prompt.trim() === '') {
       return NextResponse.json(
@@ -188,8 +211,8 @@ export async function POST(request: NextRequest) {
     const parameters = calculateParameters(MODEL_CONFIG.defaultParameters, sanitizedStyle, sanitizedComplexity);
     
     // Apply any user-provided seed
-    if (seed && !isNaN(parseInt(seed))) {
-      parameters.seed = parseInt(seed);
+    if (seed && !isNaN(parseInt(String(seed)))) {
+      parameters.seed = parseInt(String(seed));
     }
     
     // For specific styles, let's add style-specific negative prompts
@@ -204,11 +227,11 @@ export async function POST(request: NextRequest) {
     
     // Make a request to the HuggingFace API with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout
+    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout to match client
     
     try {
       const response = await fetch(
-        `https://api-inference.huggingface.co/models/${MODEL_CONFIG.baseModel}`,
+        `https://api-inference.huggingface.co/models/${MODEL_CONFIG.model}`,
         {
           method: "POST",
           headers: {
@@ -229,7 +252,7 @@ export async function POST(request: NextRequest) {
       
       clearTimeout(timeoutId);
       
-      // Handle model loading states
+      // Handle model loading states - matches client-side handling
       if (response.status === 503) {
         const responseText = await response.text();
         if (responseText.includes("Model is currently loading")) {
@@ -237,9 +260,8 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ 
             error: 'Model is still loading',
             status: 'loading',
-            retryAfter: 10, // Suggest retry after 10 seconds
-            estimatedTime: 30 // Estimated loading time in seconds
-          }, { status: 202 }); // Use 202 Accepted for this case
+            retryAfter: 10 // Suggest retry after 10 seconds
+          }, { status: 503 }); // Return 503 to match client expectations
         }
       }
 
@@ -275,45 +297,8 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      // Two-stage generation with refiner model (optional)
-      let finalImageBuffer = imageBuffer;
-      if (useRefinement) {
-        try {
-          console.log("Applying refinement model to improve image quality...");
-          const refinementResponse = await fetch(
-            `https://api-inference.huggingface.co/models/${MODEL_CONFIG.refinementModel}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${HF_API_KEY}`
-              },
-              body: JSON.stringify({ 
-                inputs: finalImageBuffer,
-                parameters: {
-                  prompt: enhancedPrompt,
-                  num_inference_steps: 30,  // Fewer steps needed for refinement
-                  guidance_scale: 5.0       // Lower for more natural refinement
-                }
-              })
-            }
-          );
-          
-          if (refinementResponse.ok) {
-            const refinedBuffer = await refinementResponse.arrayBuffer();
-            if (refinedBuffer.byteLength > 0) {
-              finalImageBuffer = refinedBuffer;
-              console.log("Refinement successful");
-            }
-          }
-        } catch (refinementError) {
-          console.error("Refinement failed, using base model output:", refinementError);
-          // Continue with the base model output
-        }
-      }
-      
       // Convert buffer to base64 for sending to client
-      const base64Image = Buffer.from(finalImageBuffer).toString('base64');
+      const base64Image = Buffer.from(imageBuffer).toString('base64');
       const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
       // Return the image along with the parameters used (for potential reuse)
@@ -327,8 +312,7 @@ export async function POST(request: NextRequest) {
             seed: parameters.seed,
             steps: parameters.num_inference_steps,
             guidance: parameters.guidance_scale,
-            dimensions: `${aspectRatio.width}x${aspectRatio.height}`,
-            refinementApplied: useRefinement
+            dimensions: `${aspectRatio.width}x${aspectRatio.height}`
           }
         }
       });
@@ -350,27 +334,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-/**
- * Validates and normalizes image dimensions
- */
-function validateDimensions(width: number, height: number) {
-  // Valid values for SDXL (must be multiples of 8)
-  const validDimensions = [512, 576, 640, 704, 768, 832, 896, 960, 1024];
-  
-  // Find the closest valid dimensions
-  const findClosest = (value: number) => {
-    return validDimensions.reduce((prev, curr) => 
-      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
-    );
-  };
-  
-  const normalizedWidth = findClosest(width || 1024);
-  const normalizedHeight = findClosest(height || 1024);
-  
-  return {
-    width: normalizedWidth,
-    height: normalizedHeight
-  };
 }

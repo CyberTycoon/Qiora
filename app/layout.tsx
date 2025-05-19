@@ -12,15 +12,15 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: {
-    default: "Qiora - AI Content Creation Platform",
-    template: "%s | Qiora",
+    default: "Quira - AI Content Creation Platform",
+    template: "%s | Quira",
   },
   description:
-    "Qiora is your all-in-one AI content creation platform. Instantly generate engaging text, visuals, and creative assets using cutting-edge generative AI models. Perfect for creators, marketers, educators, and developers.",
+    "Quira is your all-in-one AI content creation platform. Instantly generate engaging text, visuals, and creative assets using cutting-edge generative AI models. Perfect for creators, marketers, educators, and developers.",
   keywords: [
-    "Qiora",
-    "Quora AI",
-    "quora",
+    "Quira",
+    "Quira AI",
+    "quira",
     "sora",
     "ai",
     "midjourney",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "gpt-3",
     "deepseek",
     "pexel",
-    "Qiora AI",
+    "Quira AI",
     "AI content platform",
     "AI text generation",
     "AI image generator",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     "AI writing assistant",
     "AI content creator",
     "free AI content tools",
-    "Qiora platform",
+    "Quira platform",
     "AI productivity",
     "AI blogging assistant",
     "AI content marketing",
@@ -56,17 +56,17 @@ export const metadata: Metadata = {
   creator: "Silas Okanlawon",
   publisher: "Silas Okanlawon",
   openGraph: {
-    title: "Qiora - AI Content Creation Platform",
+    title: "Quira - AI Content Creation Platform",
     description:
-      "Create stunning AI-generated content effortlessly with Qiora. From blogs and marketing copy to images and code, Qiora empowers modern creators with AI tools.",
-    url: "https://qiora.vercel.app/", // Update with your new domain if changed
-    siteName: "Qiora",
+      "Create stunning AI-generated content effortlessly with Quira. From blogs and marketing copy to images and code, Quira empowers modern creators with AI tools.",
+    url: "https://Quira.vercel.app/", // Update with your new domain if changed
+    siteName: "Quira",
     images: [
       {
-        url: "/opengraph.png", // Make sure this image has updated Qiora branding
+        url: "/opengraph.png", // Make sure this image has updated Quira branding
         width: 1200,
         height: 630,
-        alt: "Qiora - AI Content Creation Platform",
+        alt: "Quira - AI Content Creation Platform",
       },
     ],
     locale: "en_US",
@@ -117,10 +117,10 @@ export default async function RootLayout({
                       <div className="bg-primary p-1.5 rounded-lg">
                         <Sparkles className="h-4 w-4 text-primary-foreground" />
                       </div>
-                      <span className="font-bold text-primary">Qiora AI</span>
+                      <span className="font-bold text-primary">Quira AI</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      © 2025 Qiora. All rights reserved.
+                      © 2025 Quira. All rights reserved.
                     </p>
                   </div>
                 </div>

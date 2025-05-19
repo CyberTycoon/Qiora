@@ -11,7 +11,7 @@ export default function Home() {
       <section className="container py-24 space-y-8 md:py-32">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="inline-block rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-primary shadow-sm">
-            Introducing Qiora AI
+            Introducing Quira AI
           </div>
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
             AI Content Creation <span className="text-primary animate-pulse">Made Simple</span>
@@ -23,7 +23,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 mt-8">
             <Button size="lg" asChild>
               <Link href="/create">
-                Create With Qiora <ArrowRight className="ml-2 h-4 w-4" />
+                Create With Quira <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
@@ -129,7 +129,7 @@ export default function Home() {
       {/* How it works */}
       <section className="bg-muted py-16 md:py-24">
         <div className="container">
-          <h2 className="text-3xl font-bold text-center mb-12">How Qiora Works</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">How Quira Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
