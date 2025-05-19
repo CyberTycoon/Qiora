@@ -1,0 +1,20 @@
+# robots.txt file for Cortex AI Content Creation Platform
+
+# Allow crawling of all content for all user agents (crawlers)
+# This is the default behavior if no disallow rules are present,
+# but explicitly allowing can be clearer.
+User-agent: *
+Allow: /
+
+# Disallow specific paths if needed (e.g., admin areas, sensitive data)
+# Example:
+# Disallow: /admin/
+# Disallow: /private/
+
+# Specify the URL of your sitemap.xml file
+# Next.js can help you generate this automatically.
+# Replace 'https://yourwebsite.com' with your actual domain.
+Sitemap: https://cortex-gray.vercel.app/sitemap.xml
+
+# Specify the preferred host (less critical now, but good practice)
+Host: cortex-gray.vercel.app
