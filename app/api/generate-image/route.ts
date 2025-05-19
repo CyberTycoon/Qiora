@@ -28,8 +28,25 @@ const MODEL_CONFIG = {
   }
 };
 
+// Define a type for valid style names
+type StyleName = 
+  | 'Product Photography' 
+  | 'Flat Design' 
+  | 'Corporate' 
+  | 'Bold' 
+  | 'Informational' 
+  | 'Illustration' 
+  | 'Concept Art' 
+  | 'Minimalist' 
+  | 'Abstract' 
+  | 'Editorial' 
+  | 'Conceptual' 
+  | 'Metaphorical' 
+  | 'Storytelling'
+  | 'natural';
+
 // Mapping of style keywords to effective prompts for application-specific styles
-const STYLE_ENHANCERS = {
+const STYLE_ENHANCERS: Record<StyleName, string> = {
   // Commercial/Marketing Styles
   'Product Photography': 'professional product photography, clean background, commercial quality, studio lighting, detailed product showcase, high resolution, advertisement quality',
   'Flat Design': 'flat design style, simplified shapes, bold colors, clean lines, minimal shading, vector-like appearance, modern graphic design',
@@ -58,7 +75,8 @@ const STYLE_ENHANCERS = {
  */
 function enhancePrompt(userPrompt: string, style: string = 'natural', complexity: number = 50) {
   // Get the style enhancer or use a default one
-  const styleText = STYLE_ENHANCERS[style] || STYLE_ENHANCERS.natural;
+  const sanitizedStyle = isValidStyle(style) ? style : 'natural';
+  const styleText = STYLE_ENHANCERS[sanitizedStyle as StyleName];
   
   // Adjust level of detail based on complexity
   let detailLevel = "";
@@ -76,24 +94,31 @@ function enhancePrompt(userPrompt: string, style: string = 'natural', complexity
   let additionalPrompt = "";
   
   // Product related enhancements
-  if (style === 'Product Photography') {
+  if (sanitizedStyle === 'Product Photography') {
     additionalPrompt = ", perfect lighting, no shadows, isolated product, commercial quality";
   } 
   // Corporate/informational enhancements
-  else if (['Corporate', 'Informational'].includes(style)) {
+  else if (['Corporate', 'Informational'].includes(sanitizedStyle)) {
     additionalPrompt = ", professional, clear, organized visual hierarchy, suitable for business context";
   }
   // Artistic enhancements
-  else if (['Illustration', 'Concept Art'].includes(style)) {
+  else if (['Illustration', 'Concept Art'].includes(sanitizedStyle)) {
     additionalPrompt = ", creative composition, artistic merit, imaginative approach";
   }
   // Editorial/storytelling enhancements
-  else if (['Editorial', 'Storytelling', 'Metaphorical'].includes(style)) {
+  else if (['Editorial', 'Storytelling', 'Metaphorical'].includes(sanitizedStyle)) {
     additionalPrompt = ", evocative, communicates clear meaning, visually engaging narrative";
   }
   
   // Return the enhanced prompt
   return `${userPrompt}, ${styleText}, ${detailLevel}${additionalPrompt}`;
+}
+
+/**
+ * Type guard to check if a style is valid
+ */
+function isValidStyle(style: string): style is StyleName {
+  return style in STYLE_ENHANCERS;
 }
 
 /**
@@ -105,14 +130,17 @@ function calculateParameters(baseParams: any, style: string, complexity: number 
   // Adjust steps based on complexity
   params.num_inference_steps = Math.min(Math.max(Math.floor(complexity * 0.7) + 30, 30), 100);
   
+  // Ensure style is valid
+  const sanitizedStyle = isValidStyle(style) ? style : 'natural';
+  
   // Adjust guidance scale based on style category
-  if (['Abstract', 'Metaphorical', 'Conceptual'].includes(style)) {
+  if (['Abstract', 'Metaphorical', 'Conceptual'].includes(sanitizedStyle)) {
     params.guidance_scale = 5.0; // Lower guidance for more creative freedom
-  } else if (['Product Photography', 'Corporate', 'Editorial'].includes(style)) {
+  } else if (['Product Photography', 'Corporate', 'Editorial'].includes(sanitizedStyle)) {
     params.guidance_scale = 8.5; // Higher guidance for more prompt adherence
-  } else if (['Minimalist', 'Flat Design'].includes(style)) {
+  } else if (['Minimalist', 'Flat Design'].includes(sanitizedStyle)) {
     params.guidance_scale = 7.0; // Balanced guidance for clean designs
-  } else if (['Bold', 'Concept Art', 'Storytelling'].includes(style)) {
+  } else if (['Bold', 'Concept Art', 'Storytelling'].includes(sanitizedStyle)) {
     params.guidance_scale = 7.8; // Slightly higher guidance for impact
   }
   
@@ -149,8 +177,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize and validate inputs
-    const sanitizedStyle = (style in STYLE_ENHANCERS) ? style : 'natural';
-    const sanitizedComplexity = Math.min(Math.max(parseInt(complexity) || 50, 10), 100);
+    const sanitizedStyle = isValidStyle(style) ? style as StyleName : 'natural';
+    const sanitizedComplexity = Math.min(Math.max(parseInt(String(complexity)) || 50, 10), 100);
     const aspectRatio = validateDimensions(width, height);
     
     // Create an enhanced prompt
