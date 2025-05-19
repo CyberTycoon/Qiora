@@ -36,7 +36,7 @@ export default function Header() {
               <Sparkles className="h-6 w-6 text-white animate-pulse" />
             </div>
             <Link href="/" className={`text-xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent transition-all hover:scale-105 ${scrolled ? '' : 'text-2xl'}`}>
-              Cortex
+              Qiora
             </Link>
           </div>
 
