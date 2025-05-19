@@ -175,7 +175,6 @@ const saveToGallery = async () => {
       description: "Please generate text first before saving to gallery.",
       variant: "destructive",
     })
-    setIsSaving(false)
     return
   }
 
@@ -212,6 +211,8 @@ const saveToGallery = async () => {
       description: "Could not connect to the database. Please try again.",
       variant: "destructive",
     })
+  } finally {
+    setIsSaving(false)
   }
 }
 
