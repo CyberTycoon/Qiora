@@ -228,8 +228,6 @@ export function UnifiedImageGenerationForm() {
       template: selectedTemplate,
       style: style,
       complexity: complexity[0],
-      width: width,
-      height: height,
       created_at: new Date().toISOString(),
     }
     
@@ -245,8 +243,6 @@ export function UnifiedImageGenerationForm() {
           template: newContent.template,
           style: newContent.style,
           complexity: newContent.complexity,
-          width: newContent.width,
-          height: newContent.height,
           created_at: newContent.created_at
         }])
       
