@@ -1,21 +1,123 @@
-// app/api/generate-image/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 // Get the HuggingFace API key from environment variables
 const HF_API_KEY = process.env.HF_TOKEN;
 
 // Increase the max duration for this API route (Next.js feature)
-export const maxDuration = 60; // 300 seconds (5 minutes)
+export const maxDuration = 300; // 300 seconds (5 minutes)
 
 // Increase the request body size limit
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '4mb',
+      sizeLimit: '8mb',
     },
     responseLimit: false,
   },
 };
+
+// Model configuration
+const MODEL_CONFIG = {
+  baseModel: "stabilityai/stable-diffusion-xl-base-1.0",
+  refinementModel: "stabilityai/stable-diffusion-xl-refiner-1.0", // Optional: for two-stage generation
+  defaultParameters: {
+    guidance_scale: 7.5,         // Controls how closely the image follows the prompt
+    num_inference_steps: 50,     // Balance between quality and speed
+    seed: undefined,             // Let it be random by default
+    negative_prompt: "blurry, distorted, disfigured, low quality, pixelated, watermark, text, words, letters, signature, poor composition",
+  }
+};
+
+// Mapping of style keywords to effective prompts for application-specific styles
+const STYLE_ENHANCERS = {
+  // Commercial/Marketing Styles
+  'Product Photography': 'professional product photography, clean background, commercial quality, studio lighting, detailed product showcase, high resolution, advertisement quality',
+  'Flat Design': 'flat design style, simplified shapes, bold colors, clean lines, minimal shading, vector-like appearance, modern graphic design',
+  'Corporate': 'corporate design, professional aesthetic, business-appropriate, clean layout, polished look, professional presentation style',
+  'Bold': 'bold design, striking colors, high contrast, eye-catching composition, dramatic lighting, impactful visuals',
+  'Informational': 'clear informational graphics, educational style, data visualization aesthetic, organized layout, instructional quality',
+  
+  // Artistic Styles
+  'Illustration': 'digital illustration, artistic rendering, hand-drawn appearance, colorful artwork, detailed illustration style',
+  'Concept Art': 'concept art style, imaginative visualization, detailed environment, professional concept artwork, creative design',
+  'Minimalist': 'minimalist design, simple composition, clean lines, limited color palette, elegant simplicity, refined aesthetic',
+  'Abstract': 'abstract art style, non-representational, creative expression, artistic composition, modern abstract aesthetic',
+  
+  // Content Styles
+  'Editorial': 'editorial style imagery, publication quality, magazine aesthetic, professional composition, journalistic quality',
+  'Conceptual': 'conceptual artwork, idea-focused imagery, symbolic visual, metaphorical representation, thought-provoking composition',
+  'Metaphorical': 'metaphorical imagery, symbolic representation, visual allegory, meaningful composition, symbolic visual storytelling',
+  'Storytelling': 'narrative illustration, story-focused composition, scene with context, evocative imagery, visual storytelling',
+  
+  // Fallback style
+  'natural': 'photo-realistic, detailed, high quality photography'
+};
+
+/**
+ * Enhances a user prompt based on style and complexity settings
+ */
+function enhancePrompt(userPrompt: string, style: string = 'natural', complexity: number = 50) {
+  // Get the style enhancer or use a default one
+  const styleText = STYLE_ENHANCERS[style] || STYLE_ENHANCERS.natural;
+  
+  // Adjust level of detail based on complexity
+  let detailLevel = "";
+  if (complexity >= 80) {
+    detailLevel = "extremely detailed, intricate details, complex composition, hyper-realistic, 8k resolution";
+  } else if (complexity >= 60) {
+    detailLevel = "highly detailed, fine details, professional quality, 4k resolution";
+  } else if (complexity >= 40) {
+    detailLevel = "moderately detailed, clear composition";
+  } else {
+    detailLevel = "simple composition, basic details";
+  }
+  
+  // Add style-specific prompt enhancers
+  let additionalPrompt = "";
+  
+  // Product related enhancements
+  if (style === 'Product Photography') {
+    additionalPrompt = ", perfect lighting, no shadows, isolated product, commercial quality";
+  } 
+  // Corporate/informational enhancements
+  else if (['Corporate', 'Informational'].includes(style)) {
+    additionalPrompt = ", professional, clear, organized visual hierarchy, suitable for business context";
+  }
+  // Artistic enhancements
+  else if (['Illustration', 'Concept Art'].includes(style)) {
+    additionalPrompt = ", creative composition, artistic merit, imaginative approach";
+  }
+  // Editorial/storytelling enhancements
+  else if (['Editorial', 'Storytelling', 'Metaphorical'].includes(style)) {
+    additionalPrompt = ", evocative, communicates clear meaning, visually engaging narrative";
+  }
+  
+  // Return the enhanced prompt
+  return `${userPrompt}, ${styleText}, ${detailLevel}${additionalPrompt}`;
+}
+
+/**
+ * Calculates optimal model parameters based on user preferences
+ */
+function calculateParameters(baseParams: any, style: string, complexity: number = 50) {
+  const params = { ...baseParams };
+  
+  // Adjust steps based on complexity
+  params.num_inference_steps = Math.min(Math.max(Math.floor(complexity * 0.7) + 30, 30), 100);
+  
+  // Adjust guidance scale based on style category
+  if (['Abstract', 'Metaphorical', 'Conceptual'].includes(style)) {
+    params.guidance_scale = 5.0; // Lower guidance for more creative freedom
+  } else if (['Product Photography', 'Corporate', 'Editorial'].includes(style)) {
+    params.guidance_scale = 8.5; // Higher guidance for more prompt adherence
+  } else if (['Minimalist', 'Flat Design'].includes(style)) {
+    params.guidance_scale = 7.0; // Balanced guidance for clean designs
+  } else if (['Bold', 'Concept Art', 'Storytelling'].includes(style)) {
+    params.guidance_scale = 7.8; // Slightly higher guidance for impact
+  }
+  
+  return params;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,27 +131,56 @@ export async function POST(request: NextRequest) {
 
     // Extract the request body
     const body = await request.json();
-    const { prompt, style, complexity } = body;
+    const { 
+      prompt, 
+      style = 'natural', 
+      complexity = 50, 
+      seed, 
+      width = 1024, 
+      height = 1024,
+      useRefinement = false   // Flag to enable two-stage generation with refiner
+    } = body;
 
-    if (!prompt) {
+    if (!prompt || prompt.trim() === '') {
       return NextResponse.json(
-        { error: 'Prompt is required' },
+        { error: 'Prompt is required and cannot be empty' },
         { status: 400 }
       );
     }
 
-    // Create a more detailed prompt using the style and complexity info
-    const enhancedPrompt = `${prompt}, style: ${style || 'natural'}, detail level: ${complexity || 50}%`;
+    // Sanitize and validate inputs
+    const sanitizedStyle = (style in STYLE_ENHANCERS) ? style : 'natural';
+    const sanitizedComplexity = Math.min(Math.max(parseInt(complexity) || 50, 10), 100);
+    const aspectRatio = validateDimensions(width, height);
     
-    console.log(`Sending request to HuggingFace API with prompt: "${enhancedPrompt.substring(0, 50)}..."`);
+    // Create an enhanced prompt
+    const enhancedPrompt = enhancePrompt(prompt, sanitizedStyle, sanitizedComplexity);
+    
+    // Calculate optimized parameters
+    const parameters = calculateParameters(MODEL_CONFIG.defaultParameters, sanitizedStyle, sanitizedComplexity);
+    
+    // Apply any user-provided seed
+    if (seed && !isNaN(parseInt(seed))) {
+      parameters.seed = parseInt(seed);
+    }
+    
+    // For specific styles, let's add style-specific negative prompts
+    if (['Product Photography', 'Corporate', 'Informational'].includes(sanitizedStyle)) {
+      parameters.negative_prompt += ", childish, amateur, unprofessional";
+    } else if (['Minimalist', 'Flat Design'].includes(sanitizedStyle)) {
+      parameters.negative_prompt += ", busy, cluttered, complex, detailed, noisy background";
+    }
+    
+    console.log(`Generating image with prompt: "${enhancedPrompt.substring(0, 50)}..."`);
+    console.log(`Using parameters:`, parameters);
     
     // Make a request to the HuggingFace API with timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
+    const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minute timeout
     
     try {
       const response = await fetch(
-        "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+        `https://api-inference.huggingface.co/models/${MODEL_CONFIG.baseModel}`,
         {
           method: "POST",
           headers: {
@@ -59,9 +190,9 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({ 
             inputs: enhancedPrompt,
             parameters: {
-              // Optional parameters for the model - simpler to avoid potential issues
-              guidance_scale: 10,
-              num_inference_steps: 90,
+              ...parameters,
+              width: aspectRatio.width,
+              height: aspectRatio.height,
             }
           }),
           signal: controller.signal
@@ -70,15 +201,17 @@ export async function POST(request: NextRequest) {
       
       clearTimeout(timeoutId);
       
-      // Check if the model is still loading
+      // Handle model loading states
       if (response.status === 503) {
         const responseText = await response.text();
         if (responseText.includes("Model is currently loading")) {
           console.log("Model is loading, returning status to client");
           return NextResponse.json({ 
-            error: 'Model is still loading, please try again in a moment',
-            retryAfter: 10 // Suggest retry after 10 seconds
-          }, { status: 503 });
+            error: 'Model is still loading',
+            status: 'loading',
+            retryAfter: 10, // Suggest retry after 10 seconds
+            estimatedTime: 30 // Estimated loading time in seconds
+          }, { status: 202 }); // Use 202 Accepted for this case
         }
       }
 
@@ -100,7 +233,7 @@ export async function POST(request: NextRequest) {
         const jsonResponse = await response.json();
         console.error("Unexpected JSON response:", jsonResponse);
         return NextResponse.json(
-          { error: 'Received JSON instead of image data' },
+          { error: 'Received JSON instead of image data', details: jsonResponse },
           { status: 500 }
         );
       }
@@ -114,11 +247,63 @@ export async function POST(request: NextRequest) {
         );
       }
       
+      // Two-stage generation with refiner model (optional)
+      let finalImageBuffer = imageBuffer;
+      if (useRefinement) {
+        try {
+          console.log("Applying refinement model to improve image quality...");
+          const refinementResponse = await fetch(
+            `https://api-inference.huggingface.co/models/${MODEL_CONFIG.refinementModel}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${HF_API_KEY}`
+              },
+              body: JSON.stringify({ 
+                inputs: finalImageBuffer,
+                parameters: {
+                  prompt: enhancedPrompt,
+                  num_inference_steps: 30,  // Fewer steps needed for refinement
+                  guidance_scale: 5.0       // Lower for more natural refinement
+                }
+              })
+            }
+          );
+          
+          if (refinementResponse.ok) {
+            const refinedBuffer = await refinementResponse.arrayBuffer();
+            if (refinedBuffer.byteLength > 0) {
+              finalImageBuffer = refinedBuffer;
+              console.log("Refinement successful");
+            }
+          }
+        } catch (refinementError) {
+          console.error("Refinement failed, using base model output:", refinementError);
+          // Continue with the base model output
+        }
+      }
+      
       // Convert buffer to base64 for sending to client
-      const base64Image = Buffer.from(imageBuffer).toString('base64');
+      const base64Image = Buffer.from(finalImageBuffer).toString('base64');
       const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
-      return NextResponse.json({ imageUrl: dataUrl });
+      // Return the image along with the parameters used (for potential reuse)
+      return NextResponse.json({ 
+        imageUrl: dataUrl,
+        generationInfo: {
+          prompt: enhancedPrompt,
+          parameters: {
+            style: sanitizedStyle,
+            complexity: sanitizedComplexity,
+            seed: parameters.seed,
+            steps: parameters.num_inference_steps,
+            guidance: parameters.guidance_scale,
+            dimensions: `${aspectRatio.width}x${aspectRatio.height}`,
+            refinementApplied: useRefinement
+          }
+        }
+      });
     } catch (fetchError) {
       clearTimeout(timeoutId);
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
@@ -137,4 +322,27 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Validates and normalizes image dimensions
+ */
+function validateDimensions(width: number, height: number) {
+  // Valid values for SDXL (must be multiples of 8)
+  const validDimensions = [512, 576, 640, 704, 768, 832, 896, 960, 1024];
+  
+  // Find the closest valid dimensions
+  const findClosest = (value: number) => {
+    return validDimensions.reduce((prev, curr) => 
+      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+    );
+  };
+  
+  const normalizedWidth = findClosest(width || 1024);
+  const normalizedHeight = findClosest(height || 1024);
+  
+  return {
+    width: normalizedWidth,
+    height: normalizedHeight
+  };
 }
